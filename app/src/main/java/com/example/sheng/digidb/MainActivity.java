@@ -98,7 +98,7 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
     private    double[] LTWindow,LCWindow,RTWindow,RCWindow ;
 
     private  int SampleRate = 0 ;
-    private  String[] Sports = {"請選擇運動", "運動一", "運動二"};
+    private  String[] Sports = {"選擇運動", "運動一", "運動二"};
     private BluetoothGatt mBtGatt = null;
     private Context mContext;
     private BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -122,7 +122,7 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
     private Button setMaxButton;
     private Button DeletDB;
     private Button printMVC;
-    private Button ButtonScan;
+    private TextView ButtonScan;
     private Handler handlerCH1;
     private Handler handlerCH2;
     private Handler countdown;
@@ -172,7 +172,7 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main2);
 
         setMaxBoolen = true;
 
@@ -279,6 +279,8 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
         SportSpinner = (Spinner) findViewById(R.id.spinner);
         DeviceSpinner = findViewById(R.id.spinner2);
 
+        bluetoothDevices.add("選擇欲連結的裝置");
+
         SportsAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, android.R.id.text1, Sports);
         DeviceAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1,android.R.id.text1, bluetoothDevices);
         SportSpinner.setAdapter(SportsAdapter);
@@ -311,7 +313,6 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
 
         device = mBluetoothAdapter.getBondedDevices();
 
-        bluetoothDevices.add("請點選欲連結的裝置" + "\n");
         openDB();
 
 
@@ -396,9 +397,10 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
         setMaxButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-
-
+                getDate();
+                getEdit();
+                dial();
+                Log.d(TAG, "buttom案");
 
                 if(setMaxBoolen==true) {
                     setMaxBoolen = false;
@@ -418,9 +420,11 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
                 if (isChecked)  {
                     _mode ="教練模式";
                     Log.d(TAG, "教練模式");
+                    findViewById(R.id.spinnerModeLayout).setVisibility(View.VISIBLE);
                 } else {
                     _mode ="自主模式";
                     Log.d(TAG, "自主模式");
+                    findViewById(R.id.spinnerModeLayout).setVisibility(View.GONE);
                 }
             }
         });
@@ -456,6 +460,7 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
                 Log.d(TAG, "buttom案");
             }
         };
+
         comfirmNum.setOnClickListener( comfirmNumBut);
 
 
@@ -607,7 +612,7 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
 
                 for (Iterator iterator = device.iterator(); iterator.hasNext(); ) {
                     BluetoothDevice bluetoothDevice = (BluetoothDevice) iterator.next();
-                    bluetoothDevices.add(bluetoothDevice.getName() + "曾經連結過:" + bluetoothDevice.getAddress() + "\n");
+                    bluetoothDevices.add(bluetoothDevice.getName() + "曾經連結過:" + bluetoothDevice.getAddress());
 
                 }
                 //  listView.setAdapter(arrayAdapter);
@@ -1433,10 +1438,12 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
 
             if(string2 =="")
             {
+                textView.setVisibility(View.VISIBLE);
                 textView.setText(string);
                 string2 = string;
             }else {
                 string2 = string2 + '\n' + string;
+                textView.setVisibility(View.VISIBLE);
                 textView.setText(string2);
             }
         }
@@ -2215,6 +2222,7 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
 
         }else if((!string1.equals("null")) && (MVC ==true)){
             Log.d(TAG, string1);
+            textView.setVisibility(View.VISIBLE);
             textView5.setText(string1);
 
             _lmup = Cur_lmup ;  //上斜方肌之最大EMG訊號
