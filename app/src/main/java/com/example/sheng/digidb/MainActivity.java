@@ -49,6 +49,7 @@ import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.ColorTemplate;
 
+import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -77,11 +78,15 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
     private   String _rmdw ="null";  //下斜方肌之最大EMG訊號
     private   String StrGroup = "0";
     private   String StrTime ="0";
+    private int  lmup_intaver =0, lmdw_intaver=0 ,rmup_intaver=0, rmdw_intaver=0;
 
     private ArrayList LTarrayList;
     private ArrayList LCarrayList;
     private ArrayList RTarrayList;
     private ArrayList RCarrayList;
+
+    boolean LTin,LTout,LCin,LCout,RTin,RTout,RCin,RCout;
+    private int onset,offset;
 
 
     private  Queue<Double> LTEMGqueue ;
@@ -117,6 +122,10 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
     private TextView textView6;
     private TextView textView9;
     private TextView textView12;
+    private TextView textView10;
+    private TextView textView13;
+    private TextView textView14;
+    private TextView textView15;
     private Button comfirmNum;
     private Button ListDB;
     private Button setMaxButton;
@@ -126,6 +135,7 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
     private Handler handlerCH1;
     private Handler handlerCH2;
     private Handler countdown;
+    private Handler fourPersentage;
     private DBhelper DH = null;
 
     private boolean QueueFirstLocker;
@@ -134,7 +144,7 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
     private final int DISCONNECTED = 0x02;
     private final int CONNECTTING = 0x03;
     public Set set = new HashSet();
-    private Timer  mTimer,RateConterTimer,mOffTime;;
+    private Timer  mTimer,RateConterTimer,mOffTime,TGcountDown;
     private Boolean TimerLocker;
     private Boolean setMaxBoolen;
 
@@ -186,10 +196,26 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
         textView12= findViewById(R.id.textView12);
         //printMVC = findViewById(R.id.button6);
 
+        textView10 = findViewById(R.id.textView10);
+        textView13 = findViewById(R.id.textView13);
+        textView14 = findViewById(R.id.textView14);
+        textView15 = findViewById(R.id.textView15);
+
+
         LTWindow = new double[96];
         LCWindow = new double[96];
         RTWindow = new double[96];
         RCWindow = new double[96];
+
+
+        LTin=false;
+        LTout=false;
+        LCin=false;
+        LCout=false;
+        RTin=false;
+        RTout=false;
+        RCin =false;
+        RCout =false;
 
 
        //作圖
@@ -287,6 +313,7 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
         // handlerCH1 = new EMGCH1Handler();
         // handlerCH2 = new EMGCH2Handler();
         countdown = new CountDownHandler();
+        fourPersentage = new fourPersentHandler();
 
         QueueFirstLocker = true;
         LTEMGqueue = new LinkedList<Double>();
@@ -311,7 +338,7 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
 
         device = mBluetoothAdapter.getBondedDevices();
 
-        bluetoothDevices.add("請點選欲連結的裝置" + "\n");
+        bluetoothDevices.add("請點選欲連結的裝置" );
         openDB();
 
 
@@ -1039,8 +1066,8 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
                 Header1 = Integer.valueOf(ary[5] + ary[6], 16);
 
 
-                Log.d(TAG, "Header0 = " + Header0.toString()
-                        + "Header1 =" + Header1);
+               /* Log.d(TAG, "Header0 = " + Header0.toString()
+                        + "Header1 =" + Header1);*/
 
 
                 if ((Header0.equals("a0")) && (Header1 == 20)) {
@@ -1054,7 +1081,7 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
                     double LCdouble = Double.parseDouble(LCEMGString);
                     double RTdouble = Double.parseDouble(RTEMGString);
                     double RCdouble = Double.parseDouble(RCEMGString);
-
+/*
                     Log.d(TAG, "data =  " + buffer.toString());
                     Log.d(TAG, "Header0 = " + Header0.toString() + '\n' +
                             "Header1 =" + Header1 +
@@ -1063,7 +1090,7 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
                             "RTdouble =" + RTdouble +
                             "RCdouble =" + RCdouble);
 
-
+*/
                     if (LTQ96Conter < 96) {
                         LTEMGqueue96.offer(LTdouble);
                         LTQ96Conter = LTQ96Conter + 1;
@@ -1136,7 +1163,7 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
                     double LCdouble = Double.parseDouble(LCEMGString);
                     double RTdouble = Double.parseDouble(RTEMGString);
                     double RCdouble = Double.parseDouble(RCEMGString);
-
+/*
                     Log.d(TAG, "data =  " + buffer.toString());
                     Log.d(TAG, "Header0 = " + Header0.toString() + '\n' +
                             "Header1 =" + Header1 +
@@ -1144,7 +1171,7 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
                             "LCdouble =" + LCdouble +
                             "RTdouble =" + RTdouble +
                             "RCdouble =" + RCdouble);
-
+*/
                     if (LTQ96Conter < 96) {
                         LTEMGqueue96.offer(LTdouble);
                         LTQ96Conter = LTQ96Conter + 1;
@@ -1515,6 +1542,36 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
         }
     }
 
+    /**
+     * 最大肌力百分比顯示
+     */
+    private class fourPersentHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+
+            if(lmup_intaver<0){lmup_intaver = lmup_intaver*(-1);}
+            if(lmdw_intaver<0){lmdw_intaver = lmdw_intaver*(-1);}
+            if(rmup_intaver<0){rmup_intaver = rmup_intaver*(-1);}
+            if(rmdw_intaver<0){rmdw_intaver = rmdw_intaver*(-1);}
+
+            if(lmup_intaver>100){lmup_intaver = 100;}
+            if(lmdw_intaver>100){lmdw_intaver = 100;}
+            if(rmup_intaver>100){rmup_intaver = 100;}
+            if(rmdw_intaver>100){rmdw_intaver = 100;}
+
+            Log.d(TAG, "左上斜方施力比:"+String.valueOf(lmup_intaver)+"%");
+            Log.d(TAG, "左下斜方施力比:"+String.valueOf(lmdw_intaver)+"%");
+
+
+
+            textView10.setText("左上斜方施力比:"+String.valueOf(lmup_intaver)+"%");
+            textView13.setText("左下斜方施力比:"+String.valueOf(lmdw_intaver)+"%");
+            textView14.setText("右上斜方施力比:"+String.valueOf(rmup_intaver)+"%");
+            textView15.setText("右下斜方施力比:"+String.valueOf(rmdw_intaver)+"%");
+
+        }
+    }
 
 
     //16進位三數字組成16進位數字
@@ -1544,9 +1601,9 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
                 //累積四秒計算一次window,之後每0.25秒計算一次四秒的window
 
 
-                Log.d(TAG,    "進ReateCounter");
+             //   Log.d(TAG,    "進ReateCounter");
 
-                 Log.d(TAG,    "LTWindow[ ]=" +  LTWindow[0] );
+                 //Log.d(TAG,    "LTWindow[ ]=" +  LTWindow[0] );
 
 
 
@@ -1616,6 +1673,7 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
 
                 setData();
                 setMVCData();
+                settimeCountDown();
                 for(int a = 0;a < 12;a++ ){
 
 
@@ -1639,6 +1697,7 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
         }, 2500, 250/* 表示4000毫秒之後，每隔250毫秒執行一次 */);
 
     }
+
 
     //标准差σ=sqrt(s^2) //閥值為平均值+標準差*3
     public static double Threshold(double[] x) {
@@ -1963,22 +2022,37 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
         if ((!(_lmup.equals("null"))) && (!(_lmdw.equals("null"))) && (!(_rmup.equals("null"))) && (!(_rmdw.equals("null")))) {
 
             int count = 96;
+
+            float lmup_aver = 0;
+            float lmdw_aver = 0;
+            float rmup_aver = 0;
+            float rmdw_aver = 0;
+
             float flo_lmup = Float.parseFloat(_lmup);
             float flo_lmdw = Float.parseFloat(_lmdw);
             float flo_rmup = Float.parseFloat(_rmup);
             float flo_rmdw = Float.parseFloat(_rmdw);
 
+            double[] LT = new double[96];
+            double[] LC = new double[96];
+            double[] RT = new double[96];
+            double[] RC = new double[96];
+
             ArrayList<Entry> values1 = new ArrayList<>();
             for (int i = 0; i < count; i++) {
                 float val = (float) LTWindow[i] / flo_lmup;
                 values1.add(new Entry(i, val));
-                // Log.d(TAG, "val="+val);
+                LT[i] = val;
+                lmup_aver = lmup_aver + (float) LTWindow[i];
             }
+
             ArrayList<Entry> values2 = new ArrayList<>();
 
             for (int i = 0; i < count; i++) {
                 float val = (float) LCWindow[i] / flo_lmdw;
                 values2.add(new Entry(i, val));
+                LC[i] = val;
+                lmdw_aver = lmdw_aver + (float) LCWindow[i];
             }
 
 
@@ -1995,6 +2069,9 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
                 float val = (float) RTWindow[i] / flo_rmup;
                 values4.add(new Entry(i, val));
                 // Log.d(TAG, "val="+val);
+                RT[i] = val;
+                rmup_aver = rmup_aver + (float) RTWindow[i];
+
             }
 
 
@@ -2003,6 +2080,8 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
             for (int i = 0; i < count; i++) {
                 float val = (float) RCWindow[i] / flo_rmdw;
                 values5.add(new Entry(i, val));
+                RC[i] = val;
+                rmdw_aver = rmdw_aver + (float) RCWindow[i];
             }
 
 
@@ -2012,6 +2091,31 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
                 float val = ((float) RTWindow[i] / flo_rmup) / ((float) RCWindow[i] / flo_rmdw);
                 values6.add(new Entry(i, val));
             }
+
+
+            lmup_intaver =(int) ((lmup_aver/96)/flo_lmup);
+            lmdw_intaver =(int)((lmdw_aver/96)/flo_lmdw);
+            rmup_intaver =(int)((rmup_aver/96)/flo_rmup);
+            rmdw_intaver =(int)((rmdw_aver/96)/flo_rmdw);
+
+            int threshLT = 0,threshLC = 0,threshRT = 0,threshRC = 0;
+
+            threshLT = (int) Threshold(LT);
+            threshLC = (int) Threshold(LC);
+            threshRT = (int) Threshold(RT);
+            threshRC = (int) Threshold(RC);
+
+
+
+
+            Message message = Message.obtain();
+            //message.arg1 = Integer.parseInt(buffer.toString());
+            message.obj ="設定百分比";
+            fourPersentage.sendMessage(message);
+
+
+
+
 
             LineDataSet set1, set2, set3;
 
@@ -2229,5 +2333,131 @@ public class MainActivity extends AppCompatActivity  implements SeekBar.OnSeekBa
         }else {   Toast.makeText(getApplicationContext(), "運動:"+_exrpjct+"之最大肌力尚未設定"+'\n'+"請設定完再試", Toast.LENGTH_SHORT).show();}
 
     }
+
+
+    private void settimeCountDown(){
+
+        TGcountDown = new Timer(true);
+        TimerTask tt = new TimerTask() {
+
+            public void run() {
+
+                if ((!(_lmup.equals("null"))) && (!(_lmdw.equals("null"))) && (!(_rmup.equals("null"))) && (!(_rmdw.equals("null")))) {
+
+                    int count = 96;
+
+                    float lmup_aver = 0;
+                    float lmdw_aver = 0;
+                    float rmup_aver = 0;
+                    float rmdw_aver = 0;
+
+                    float flo_lmup = Float.parseFloat(_lmup);
+                    float flo_lmdw = Float.parseFloat(_lmdw);
+                    float flo_rmup = Float.parseFloat(_rmup);
+                    float flo_rmdw = Float.parseFloat(_rmdw);
+
+                    double[] LT = new double[96];
+                    double[] LC = new double[96];
+                    double[] RT = new double[96];
+                    double[] RC = new double[96];
+
+
+                    for (int i = 0; i < count; i++) {
+                        float val = (float) LTWindow[i] / flo_lmup;
+                        LT[i] = val;
+                    }
+
+
+                    for (int i = 0; i < count; i++) {
+                        float val = (float) LCWindow[i] / flo_lmdw;
+                        LC[i] = val;
+                    }
+
+
+                    for (int i = 0; i < count; i++) {
+                        float val = (float) RTWindow[i] / flo_rmup;
+                        RT[i] = val;
+                    }
+
+
+                    for (int i = 0; i < count; i++) {
+                        float val = (float) RCWindow[i] / flo_rmdw;
+                        RC[i] = val;
+                    }
+
+
+                    lmup_intaver = (int) (((lmup_aver / 96) / flo_lmup)*100);
+                    lmdw_intaver = (int) (((lmdw_aver / 96) / flo_lmdw)*100);
+                    rmup_intaver = (int) (((rmup_aver / 96) / flo_rmup)*100);
+                    rmdw_intaver = (int) (((rmdw_aver / 96) / flo_rmdw)*100);
+                    
+                    Log.d(TAG, String.valueOf(lmup_aver)+String.valueOf(flo_lmup));
+                    int threshLT = 0, threshLC = 0, threshRT = 0, threshRC = 0;
+
+                    threshLT = (int) Threshold(LT);
+                    threshLC = (int) Threshold(LC);
+                    threshRT = (int) Threshold(RT);
+                    threshRC = (int) Threshold(RC);
+
+
+
+                    for (int i = 0; i < 86; i++) {
+                        int TLLock = 1;
+                        int TCLock = 1;
+                        int RLLock = 1;
+                        int RCLock = 1;
+                        //找頭
+                        if((LTin == false)&&(LTout ==false)) {
+                            for (int j = 0; j < 10; j++) {
+                                if ((LT[i + j] > threshLT) && (LC[i + j] > threshLC) && (RT[i + j] > threshRT) && (RC[i + j] > threshRC)) {
+                                    TLLock = TLLock * 1;
+                                } else {
+                                    TLLock = TLLock * 0;
+                                }
+
+                            }
+
+                            if (TLLock == 1) {
+                                LTin = true;
+                                onset = i;
+                            }
+
+                        }
+                        //找尾
+                        if((LTin == true)&&(LTout ==false)) {
+                            for (int j = 0; j < 10; j++) {
+                                if ((LT[i + j] < threshLT) && (LC[i + j] < threshLC) && (RT[i + j] < threshRT) && (RC[i + j] < threshRC)) {
+                                    TLLock = TLLock * 1;
+                                } else {
+                                    TLLock = TLLock * 0;
+                                }
+
+                            }
+
+                            if ((TLLock == 1)&&(i>onset)) {
+                                LTin = false;
+                                Log.d(TAG, "做完一次動作");
+                                //做完一次動作
+                                onset = i;
+                            }
+
+                        }
+
+                    }
+                    int n ;//每次進幾筆資料
+                    onset = onset -12;
+                    if(onset<0){
+                        onset = 0;
+                    }
+
+                }
+
+                }
+        };
+
+        TGcountDown.schedule(tt, 1000, 250);
+
+    }
+
 
 }
